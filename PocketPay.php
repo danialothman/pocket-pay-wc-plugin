@@ -2,9 +2,9 @@
 /*
  * Plugin Name: Pocket Pay Payment Plugin
  * Description: Accept online payments on your woocommerce store powered by Pocket.
- * Author: Yamin @ ThreeG Media Sdn Bhd
+ * Author: Yamin @ ThreeG Media Sdn Bhd (Updated by Nisa Alias)
  * Author URI: https://www.threegmedia.com
- * Version: 1.0
+ * Version: 1.5
  */
 if ( ! in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) return;
 add_action( 'plugins_loaded', 'initialize_gateway_class' );
@@ -13,6 +13,11 @@ add_filter( 'woocommerce_payment_gateways', 'add_custom_gateway_class' );
 function initialize_gateway_class() {
 	
     class PocketPay extends WC_Payment_Gateway {
+		
+		public string $store_name = '';
+		public bool $test_mode = false;
+		public ?string $api_key = null;
+		public ?string $salt = null;
 
 		public function __construct() {
 			$this->id = 'pocketpay'; // payment gateway ID
@@ -35,8 +40,17 @@ function initialize_gateway_class() {
 			$this->description = $this->get_option( 'description' );
 			$this->enabled = $this->get_option( 'enabled' );
 			$this->test_mode = 'yes' === $this->get_option( 'test_mode' );
-			$this->api_key = $this->test_mode ? $this->get_option( 'test_api_key' ) : $this->get_option( 'api_key' );
-			$this->salt = $this->test_mode ? $this->get_option( 'test_salt' ) : $this->get_option( 'salt' );
+			if ($this->test_mode === true) {
+				$this->api_key = $this->get_option( 'test_api_key' );
+				$this->salt = $this->get_option( 'test_salt' );
+			} else {
+				$this->api_key = $this->get_option( 'api_key' );
+				$this->salt = $this->get_option( 'salt' );
+			}
+			
+
+			// $this->api_key = $this->test_mode ? $this->get_option( 'test_api_key' ) : $this->get_option( 'api_key' );
+			// $this->salt = $this->test_mode ? $this->get_option( 'test_salt' ) : $this->get_option( 'salt' );
 
 			// Action hook to saves the settings
 			if(is_admin()) {
@@ -179,11 +193,11 @@ function initialize_gateway_class() {
 						'redirect' => $createUrl->payment_url
 					);
 				} else {
-					wc_add_notice(  'Please try again.', 'error' );
+					wc_add_notice(  'Please try again. 1', 'error' );
 					return;
 				}
 			} else {
-				wc_add_notice(  'Please try again.', 'error' );
+				wc_add_notice(  'Please try again. 2 : ' . $hashed_data, 'error' );
 				return;
 			}
 
@@ -212,7 +226,7 @@ function initialize_gateway_class() {
 					);
 		 
 				} else {
-					wc_add_notice(  'Please try again.', 'error' );
+					wc_add_notice(  'Please try again. 3', 'error' );
 					return;
 				}
 		 
@@ -297,7 +311,7 @@ function initialize_gateway_class() {
 			if($this->test_mode){
 				$URL = "http://pay.threeg.asia/payments/getLastOrderId";
 			} else {
-				$URL = "https://pay.pocket.com.bn/payments/getLastOrderId";
+				$URL = "https://pocket-pay.threeg.asia/payments/getNewOrderIdOld";
 			}
 			
 			$ch = curl_init();
@@ -389,9 +403,9 @@ function initialize_gateway_class() {
 			$returnVal = false;
 			
 			if($this->test_mode){
-				$URL = "http://pay.threeg.asia/payments/hash";
+				$URL = "http://pay.threeg.asia/payments/hashOld";
 			} else {
-				$URL = "https://pay.pocket.com.bn/payments/hash";
+				$URL = "https://pocket-pay.threeg.asia/payments/hashOLD";
 			}
 			
 			$ch = curl_init();
@@ -412,6 +426,10 @@ function initialize_gateway_class() {
 			if(intval($statusCode) == 200){
 				//Success
 				$returnVal = json_decode($results);
+			} else {
+				
+				wc_add_notice(  'Hashing error : ' . json_encode($URL), 'error' );
+				return;
 			}
 			curl_close ($ch);
 			return $returnVal;
@@ -440,9 +458,9 @@ function initialize_gateway_class() {
 			$returnVal = false;
 			
 			if($this->test_mode){
-				$URL = "http://pay.threeg.asia/payments/create";
+				$URL = "http://pay.threeg.asia/payments/createOld";
 			} else {
-				$URL = "https://pay.pocket.com.bn/payments/create";
+				$URL = "https://pocket-pay.threeg.asia/payments/createOLD";
 			}
 			$ch = curl_init();
 			curl_setopt($ch, CURLOPT_URL, $URL);
