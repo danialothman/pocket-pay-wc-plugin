@@ -9,6 +9,7 @@ Pocket Pay is a payment gateway provided by the Pocket team from ThreeG Media Sd
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Testing](#testing)
+- [Conducting Tests](#conducting-tests)
 - [Production](#production)
 - [Usage](#usage)
 - [Support](#support)
@@ -70,6 +71,38 @@ To test the Pocket Pay WooCommerce plugin, you can use the following test creden
 - These credentials are for testing purposes only and will not process real transactions.
 - The test environment is hosted at `https://pocket-pay-test.threeg.asia` (changed from `http://pay.threeg.asia` as of 17th April 2026). Plugin version 1.6 and above points to the new test environment.
 - For production use, uncheck `Enable Test Mode` in the settings page and replace the test credentials with your live Pocket Pay credentials.
+
+## Conducting Tests
+
+Beyond a single successful payment, the following scenarios are recommended to verify the plugin behaves correctly in the cases customers will actually hit. All of these can be performed in the test environment with the test credentials above.
+
+1. **Successful transaction:**
+   - Check out using the test card with CVV `555`.
+   - Verify the order status changes to `Processing`/`Completed`, stock is reduced, and you are redirected to the order confirmation page.
+
+2. **Failed transaction:**
+   - Check out using the test card with any CVV other than `555`.
+   - Verify an error notice is shown, you are redirected back to the cart, and the order remains unpaid.
+
+3. **Retry after a failed transaction:**
+   - After a failed payment, attempt to pay for the same order again.
+   - Verify the second attempt can complete successfully.
+
+4. **Revisiting the return URL:**
+   - After a successful payment, reload the return URL (`/wc-api/pocket?OrderId=...`).
+   - Verify the order is not processed twice — in particular, that product stock is not reduced a second time.
+
+5. **Abandoned payment:**
+   - Proceed to the Pocket Pay payment page, then close it without paying.
+   - Verify the order remains pending and stock is untouched.
+
+6. **Order amounts with cents:**
+   - Place an order with a non-round total (e.g. `B$10.99`, or a total affected by tax/discounts).
+   - Verify the amount charged on the Pocket Pay page matches the order total exactly.
+
+### Note
+
+- Scenarios involving stock should be tested with a product that has stock management enabled, so stock counts can be verified before and after.
 
 ## Production 
 
